@@ -93,5 +93,5 @@ singleton_morphism e1 e2 s =
 \end{document}
 
 %% Local Variables: **
-%% compile-command: "pdflatex TheFirst.lhs && evince TheFirst.pdf" **
+%% compile-command: "pdflatex Category.lhs && evince Category.pdf" **
 %% End: **
