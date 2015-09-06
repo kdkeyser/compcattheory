@@ -1,6 +1,7 @@
 \documentclass[a4paper,10pt]{article}
 \usepackage{listings}
 \usepackage{bussproofs}
+\usepackage{amsthm}
 \lstloadlanguages{Haskell}
 \lstnewenvironment{code}
             {\lstset{}%
@@ -23,10 +24,9 @@
 \begin{document}
 \section{Defining categories in Haskell}
 \subsection{General Categories}
-Remarks \\
-\begin{itemize}
-\item We should insist on equality of objects and morphisms... they are needed for the axioms.
 
+\begin{itemize}
+\item We should insist on equality of objects and morphisms, they are needed for the axioms.
 \end{itemize}
 
 \begin{code}
@@ -40,25 +40,39 @@ data Category object morphism =
              target :: morphism -> object,
              identity :: object -> morphism,
              compose :: morphism -> morphism -> Maybe morphism }
-
 \end{code}
 The following properties have to hold
+
 \begin{prooftree}
-\def\fCenter{\mbox{\ $\vdash$\ }}
-\AxiomC{$\Gamma, \omega : *,\ \mu : *$ \ \fCenter \ c : Category $\omega \ \mu$, o : $\omega$, m : $\mu$}
-\UnaryInfC{\lstinline|c.compose (identity o) m ==  m |}
+\AxiomC{$\omega : *\ \ \mu : *\ c : Category(\omega,\ \mu) \ o : \omega$}
+\UnaryInfC{\lstinline|source c $ identity c o| $==$ \lstinline|o|}
+\end{prooftree}
+
+\begin{prooftree}
+\AxiomC{$\omega : *\ \ \mu : *\ c : Category(\omega,\ \mu) \ o : \omega$}
+\UnaryInfC{\lstinline|target c $ identity c o| $==$ \lstinline|o|}
+\end{prooftree}
+
+\begin{prooftree}
+\AxiomC{$\omega : *\ \ \mu : *\ c : Category(\omega,\ \mu) \ m : \mu$}
+\UnaryInfC{\lstinline|compose c (identity $ source c m)  m| $==$ \lstinline|m|}
+\end{prooftree}
+
+\begin{prooftree}
+\AxiomC{$\omega : *\ \mu : *  c : Category(\omega,\ \mu) \ m : \mu$}
+\UnaryInfC{\lstinline|compose c m (identity $ target m)| $==$  \lstinline|m|}
 \end{prooftree}
 
 \begin{prooftree}
 \def\fCenter{\mbox{\ $\vdash$\ }}
-\AxiomC{$\Gamma, \omega : *,\ \mu : *$ \ \fCenter \ c : Category $\omega \ \mu$, o : $\omega$, m : $\mu$}
-\UnaryInfC{\lstinline|c.compose m (identity o) ==  m |}
+\AxiomC{$\omega : *\ \mu : * \ c : Category(\omega,\ \mu)\  m1, m2 : \mu\ \fCenter\ $
+\lstinline|target c m1| $==$ \lstinline|source c m2|  }
+\UnaryInfC{\lstinline| isJust $ compose c m1 m2| $==$ \lstinline|True|}
 \end{prooftree}
 
 \begin{prooftree}
-\def\fCenter{\mbox{\ $\vdash$\ }}
-\AxiomC{$\Gamma, \omega : *,\ \mu : *$ \ \fCenter \ c : Category $\omega \ \mu$, m1, m2, m3 : $\mu$}
-\UnaryInfC{\lstinline|c.compose m1 $ c.compose m2 m3  ==  c.compose (c.compose m1 m2) m3  |}
+\AxiomC{$\omega : *\ \mu : * \ c : Category(\omega,\ \mu)  m1, m2, m3 : \mu$}
+\UnaryInfC{\lstinline|compose c m1 $ compose c m2 m3|  $==$  \lstinline|compose c (compose c m1 m2) m3 |}
 \end{prooftree}
 
 \subsection{Category Of Sets}
