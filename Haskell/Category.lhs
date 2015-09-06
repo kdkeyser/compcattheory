@@ -1,5 +1,6 @@
 \documentclass[a4paper,10pt]{article}
 \usepackage{listings}
+\usepackage{bussproofs}
 \lstloadlanguages{Haskell}
 \lstnewenvironment{code}
             {\lstset{}%
@@ -25,7 +26,9 @@
 Remarks \\
 \begin{itemize}
 \item We should insist on equality of objects and morphisms... they are needed for the axioms.
+
 \end{itemize}
+
 \begin{code}
 
 module Category where
@@ -39,6 +42,25 @@ data Category object morphism =
              compose :: morphism -> morphism -> Maybe morphism }
 
 \end{code}
+The following properties have to hold
+\begin{prooftree}
+\def\fCenter{\mbox{\ $\vdash$\ }}
+\AxiomC{$\Gamma, \omega : *,\ \mu : *$ \ \fCenter \ c : Category $\omega \ \mu$, o : $\omega$, m : $\mu$}
+\UnaryInfC{\lstinline|c.compose (identity o) m ==  m |}
+\end{prooftree}
+
+\begin{prooftree}
+\def\fCenter{\mbox{\ $\vdash$\ }}
+\AxiomC{$\Gamma, \omega : *,\ \mu : *$ \ \fCenter \ c : Category $\omega \ \mu$, o : $\omega$, m : $\mu$}
+\UnaryInfC{\lstinline|c.compose m (identity o) ==  m |}
+\end{prooftree}
+
+\begin{prooftree}
+\def\fCenter{\mbox{\ $\vdash$\ }}
+\AxiomC{$\Gamma, \omega : *,\ \mu : *$ \ \fCenter \ c : Category $\omega \ \mu$, m1, m2, m3 : $\mu$}
+\UnaryInfC{\lstinline|c.compose m1 $ c.compose m2 m3  ==  c.compose (c.compose m1 m2) m3  |}
+\end{prooftree}
+
 \subsection{Category Of Sets}
 \begin{code}
 
@@ -87,7 +109,93 @@ singleton_morphism :: Ord element => element ->
 singleton_morphism e1 e2 s =
   assert (Set.member e2 s) SetMorphism { setmorphism_source = Set.singleton e1,
                                          setmorphism_target =s,
-                                         setmorphism_morphism = \_ -> e2}
+                                         setmorphism_morphism = const e2}
+
+\end{code}
+\begin{code}
+data UnitObj = UnitObj
+data UnitMor = UnitMor
+
+unit_category :: Category UnitObj UnitMor
+unit_category = Category { source = const UnitObj,
+                           target = const UnitObj,
+                           identity = const UnitMor,
+                           compose = const $ const (Just UnitMor)
+                         }
+
+\end{code}
+
+\begin{code}
+data FFunctor object1 morphism1 object2 morphism2 = FFunctor {
+  functor_domain :: Category object1 morphism1,
+  functor_range :: Category object2 morphism2,
+  functor_object_map :: object1 -> object2,
+  functor_morphism_map :: morphism1 -> morphism2
+  }
+
+functor_compose :: FFunctor o1 m1 o2 m2 ->
+                   FFunctor o2 m2 o3 m3 ->
+                   FFunctor o1 m1 o3 m3
+functor_compose f1 f2 =
+  f1  { functor_range = functor_range f2,
+        functor_object_map = (functor_object_map f2) . (functor_object_map f1),
+        functor_morphism_map = (functor_morphism_map f2) . (functor_morphism_map f1)
+      }
+
+type Isomorphism object1 morphism1 object2 morphism2 =
+  (FFunctor object1 morphism1 object2 morphism2,
+   FFunctor object2 morphism2 object1 morphism1)
+
+\end{code}
+
+\begin{code}
+identityFunctor :: Category object morphism ->
+               FFunctor object morphism object morphism
+identityFunctor cat = FFunctor {
+  functor_domain = cat,
+  functor_range = cat,
+  functor_morphism_map = id,
+  functor_object_map = id
+  }
+
+-- Why k??
+k :: Category object morphism ->
+     object ->
+     FFunctor UnitObj UnitMor object morphism
+k cat object = FFunctor {
+  functor_domain = unit_category,
+  functor_range = cat,
+  functor_object_map = const object,
+  functor_morphism_map = const $ identity cat $ object
+  }
+
+-- Why o??
+o :: Category object morphism ->
+     FFunctor object morphism UnitObj UnitMor
+o cat = FFunctor {
+  functor_domain = cat,
+  functor_range = unit_category,
+  functor_object_map = const UnitObj,
+  functor_morphism_map = const UnitMor }
+
+\end{code}
+
+\begin{code}
+dualCategory :: Category object morphism ->
+                Category object morphism
+dualCategory cat = cat {
+  source = target cat,
+  target = source cat,
+  compose = flip $ compose cat
+  }
+
+dualFunctor :: FFunctor object1 morphism1 object2 morphism2 ->
+               FFunctor object1 morphism1 object2 morphism2
+
+dualFunctor functor =
+  functor { functor_domain = dualCategory $ functor_domain functor,
+            functor_range = dualCategory $ functor_range functor
+          }
 
 \end{code}
 \end{document}
